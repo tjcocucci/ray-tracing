@@ -10,10 +10,12 @@ public class RayTracingMaster : MonoBehaviour
     public Vector2 SphereRadiusMinMax = new Vector2(3.0f, 8.0f);
     public uint SpheresMax = 100;
     public float SpherePlacementRadius = 100.0f;
+    public int SphereSeed;
 
     private ComputeBuffer _sphereBuffer;
     private RenderTexture _target;
     private Camera _camera;
+    private RenderTexture _converged;
 
     private uint _currentSample = 0;
     private Material _addMaterial;
@@ -44,6 +46,7 @@ public class RayTracingMaster : MonoBehaviour
 
     private void SetUpScene()
     {
+        Random.InitState(SphereSeed);
         List<Sphere> spheres = new List<Sphere>();
 
         // Add a number of random spheres
@@ -97,6 +100,7 @@ public class RayTracingMaster : MonoBehaviour
         RayTracingShader.SetTexture(0, "_SkyboxTexture", SkyboxTexture);
         RayTracingShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
         RayTracingShader.SetBuffer(0, "_Spheres", _sphereBuffer);
+        RayTracingShader.SetFloat("_Seed", Random.value);
     }
 
     private void Update()
@@ -123,7 +127,8 @@ public class RayTracingMaster : MonoBehaviour
     private void Render(RenderTexture destination)
     {
         // Make sure we have a current render target
-        InitRenderTexture();
+        InitRenderTexture(ref _target);
+        InitRenderTexture(ref _converged);
         // Set the target and dispatch the compute shader
         RayTracingShader.SetTexture(0, "Result", _target);
         int threadGroupsX = Mathf.CeilToInt(Screen.width / 8.0f);
@@ -134,23 +139,25 @@ public class RayTracingMaster : MonoBehaviour
             _addMaterial = new Material(Shader.Find("Hidden/AddShader"));
         }
         _addMaterial.SetFloat("_Sample", _currentSample);
-        Graphics.Blit(_target, destination, _addMaterial);
+        Graphics.Blit(_target, _converged, _addMaterial);
+        Graphics.Blit(_converged, destination);
         _currentSample++;
     }
 
-    private void InitRenderTexture()
+    private void InitRenderTexture(ref RenderTexture texture)
     {
-        if (_target == null || _target.width != Screen.width || _target.height != Screen.height)
+        if (texture == null || texture.width != Screen.width || texture.height != Screen.height)
         {
             // Release render texture if we already have one
-            if (_target != null)
-                _target.Release();
+            if (texture != null)
+                texture.Release();
             _currentSample = 0;
             // Get a render target for Ray Tracing
-            _target = new RenderTexture(Screen.width, Screen.height, 0,
+            texture = new RenderTexture(Screen.width, Screen.height, 0,
                 RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            _target.enableRandomWrite = true;
-            _target.Create();
+            texture.enableRandomWrite = true;
+            texture.Create();
         }
+
     }
 }
