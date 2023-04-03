@@ -26,6 +26,8 @@ public class RayTracingMaster : MonoBehaviour
         public float radius;
         public Vector3 albedo;
         public Vector3 specular;
+        public float smoothness;
+        public Vector3 emission;
     };
 
     private void Awake()
@@ -73,20 +75,30 @@ public class RayTracingMaster : MonoBehaviour
             if (skip) {
                 continue;
             } else {
-                // Albedo and specular color
-                Color color = Random.ColorHSV();
-                bool metal = Random.value < 0.5f;
+
+            Color color = Random.ColorHSV();
+            float emissionChance = Random.value;
+            float metallicChance = Random.value;
+            if (emissionChance < 0.8f)
+            {
+                bool metal = metallicChance < 0.4f;
                 sphere.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
                 sphere.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
-                
-                // Add the sphere to the list
-                spheres.Add(sphere);
-
+                sphere.smoothness = Random.value;
+            }
+            else
+            {
+                Color emission = Random.ColorHSV(0, 1, 0, 1, 3.0f, 8.0f);
+                sphere.emission = new Vector3(emission.r, emission.g, emission.b);
+            }
+            // Add the sphere to the list
+            spheres.Add(sphere);
+            Debug.Log(sphere.position);
             }
         }
         Debug.Log(spheres.Count);
         // Assign to compute buffer. Stride parameter is size of Sphere struct in bytes
-        _sphereBuffer = new ComputeBuffer(spheres.Count, 40);
+        _sphereBuffer = new ComputeBuffer(spheres.Count, 56);
         _sphereBuffer.SetData(spheres);
     }
 
