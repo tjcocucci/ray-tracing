@@ -150,17 +150,6 @@ float3x3 GetTangentSpace(float3 normal)
     return float3x3(tangent, binormal, normal);
 }
 
-// float3 SampleHemisphere(float3 normal)
-// {
-//     // Uniformly sample hemisphere direction
-//     float cosTheta = rand();
-//     float sinTheta = sqrt(max(0.0f, 1.0f - cosTheta * cosTheta));
-//     float phi = 2 * PI * rand();
-//     float3 tangentSpaceDir = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-//     // Transform direction to world space
-//     return mul(tangentSpaceDir, GetTangentSpace(normal));
-// }
-
 float3 SampleHemisphere(float3 normal, float alpha)
 {
     // Sample the hemisphere, where alpha determines the kind of the sampling
@@ -259,15 +248,5 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         if (!any(ray.energy))
             break;
     }
-    // RayHit hit = Trace(ray);
-    // float3 result = Shade(ray, hit);
     Result[id.xy] = float4(result, 1.0f);
-
-    // Just sample skybox
-    // float theta = acos(ray.direction.y) / -PI;
-    // float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-    // Result[id.xy] = _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0);
-
-    // Paint pixel with color based on ray direction
-    // Result[id.xy] = float4(ray.direction * 0.5f + 0.5f, 1.0f);
 }
